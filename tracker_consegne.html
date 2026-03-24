@@ -293,10 +293,14 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
     </div>
     <div class="form-group"><label>Preparazione</label></div>
     <div class="checks-grid">
-      <label class="check-label"><input type="checkbox" id="f_prep"> 🔧 Estetica</label>
+      <label class="check-label"><input type="checkbox" id="f_prep"> 🔧 Prep. estetica</label>
       <label class="check-label"><input type="checkbox" id="f_rev"> 🔍 Revisione</label>
       <label class="check-label"><input type="checkbox" id="f_chiavi"> 🗝 Doppie chiavi</label>
       <label class="check-label"><input type="checkbox" id="f_doc"> 📄 Documenti</label>
+      <label class="check-label"><input type="checkbox" id="f_lavint"> 🪣 Lavaggio interno</label>
+      <label class="check-label"><input type="checkbox" id="f_lavext"> 💧 Lavaggio esterno</label>
+      <label class="check-label"><input type="checkbox" id="f_kit"> 🦺 Kit emergenza</label>
+      <label class="check-label"><input type="checkbox" id="f_pagata"> 💶 Pagata</label>
     </div>
     <div class="form-group"><label>Note</label><textarea id="f_note" placeholder="Accessori, particolari..."></textarea></div>
     <div class="modal-actions">
@@ -379,7 +383,7 @@ async function deleteNote(id){
 setInterval(()=>{if(GAS_URL)loadAll();},30000);
 
 // ── HELPERS ──
-function getProgress(c){return Math.round(([c.prep,c.rev,c.chiavi,c.doc].filter(Boolean).length/4)*100);}
+function getProgress(c){return Math.round(([c.prep,c.rev,c.chiavi,c.doc,c.lavint,c.lavext,c.kit,c.pagata].filter(Boolean).length/8)*100);}
 function getUrgency(c){
   if(c.consegnata||!c.data)return null;
   const diff=Math.ceil((new Date(c.data)-new Date(new Date().setHours(0,0,0,0)))/86400000);
@@ -442,10 +446,14 @@ function renderCards(){
     const ds=formatDate(c.data,c.ora),dc=getDateClass(c);
     const cardCls=c.consegnata?'done-card':u==='rosso'?'urgent-card':u==='giallo'?'near-card':'';
     const phases=[
-      {key:'prep',label:'Estetica',done:c.prep},
+      {key:'prep',label:'Prep.',done:c.prep},
       {key:'rev',label:'Revisione',done:c.rev},
       {key:'chiavi',label:'Chiavi',done:c.chiavi},
-      {key:'doc',label:'Documenti',done:c.doc}
+      {key:'doc',label:'Documenti',done:c.doc},
+      {key:'lavint',label:'Lav. interno',done:c.lavint},
+      {key:'lavext',label:'Lav. esterno',done:c.lavext},
+      {key:'kit',label:'Kit emerg.',done:c.kit},
+      {key:'pagata',label:'Pagata',done:c.pagata}
     ];
     return `<div class="car-card ${cardCls}">
       <div class="card-top">
@@ -518,7 +526,7 @@ async function togglePhase(id,key){
   const c=cars.find(x=>String(x.id)===String(id));
   if(!c||c.consegnata)return;
   c[key]=!c[key]; renderAll(); await saveCar(c);
-  const l={prep:'Estetica',rev:'Revisione',chiavi:'Chiavi',doc:'Documenti'};
+  const l={prep:'Prep. estetica',rev:'Revisione',chiavi:'Chiavi',doc:'Documenti',lavint:'Lav. interno',lavext:'Lav. esterno',kit:'Kit emergenza',pagata:'Pagata'};
   showToast(c[key]?'✅':'⭕',`${l[key]} ${c[key]?'completata':'deselezionata'}`);
 }
 async function markConsegnata(id){
@@ -540,7 +548,7 @@ async function addNote(){
 function openModal(car){
   document.getElementById('modalTitleText').textContent=car?'Modifica Auto':'Nuova Auto';
   ['modello','targa','cliente','telefono','data','ora','note'].forEach(k=>document.getElementById('f_'+k).value=car?.[k]||'');
-  ['prep','rev','chiavi','doc'].forEach(k=>document.getElementById('f_'+k).checked=car?.[k]||false);
+  ['prep','rev','chiavi','doc','lavint','lavext','kit','pagata'].forEach(k=>document.getElementById('f_'+k).checked=car?.[k]||false);
   editingId=car?.id||null;
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow='hidden';
@@ -565,6 +573,10 @@ async function saveAuto(){
     rev:document.getElementById('f_rev').checked,
     chiavi:document.getElementById('f_chiavi').checked,
     doc:document.getElementById('f_doc').checked,
+    lavint:document.getElementById('f_lavint').checked,
+    lavext:document.getElementById('f_lavext').checked,
+    kit:document.getElementById('f_kit').checked,
+    pagata:document.getElementById('f_pagata').checked,
     note:document.getElementById('f_note').value.trim(),
   };
   let carToSave;
