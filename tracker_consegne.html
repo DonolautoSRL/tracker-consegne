@@ -390,10 +390,10 @@ function getUrgency(c){
   return diff<0||diff<=2?'rosso':diff<=5?'giallo':'verde';
 }
 function getStatusLabel(c){
-  if(c.consegnata)return{label:'Consegnata',cls:'badge-consegnata'};
+  if(c.consegnata)return{label:'Consegnata ✓',cls:'badge-consegnata'};
   const p=getProgress(c),u=getUrgency(c);
-  if(p===100)return{label:'Pronta ✓',cls:'badge-pronta'};
-  if(u==='rosso')return{label:'Urgente',cls:'badge-urgente'};
+  if(p===100)return{label:'Pronta 🟢',cls:'badge-pronta'};
+  if(u==='rosso')return{label:'Urgente 🔴',cls:'badge-urgente'};
   if(u==='giallo')return{label:'In scadenza',cls:'badge-scadenza'};
   return{label:'In lavorazione',cls:'badge-lavorazione'};
 }
@@ -525,9 +525,12 @@ function renderAll(){renderStats();renderCards();renderNotes();renderAlerts();}
 async function togglePhase(id,key){
   const c=cars.find(x=>String(x.id)===String(id));
   if(!c||c.consegnata)return;
-  c[key]=!c[key]; renderAll(); await saveCar(c);
+  c[key]=!c[key];
+  renderAll(); // aggiorna subito UI
   const l={prep:'Prep. estetica',rev:'Revisione',chiavi:'Chiavi',doc:'Documenti',lavint:'Lav. interno',lavext:'Lav. esterno',kit:'Kit emergenza',pagata:'Pagata'};
   showToast(c[key]?'✅':'⭕',`${l[key]} ${c[key]?'completata':'deselezionata'}`);
+  const res=await gasRequest({action:'saveCar',data:c});
+  if(res?.ok){cars=res.cars;renderAll();} // aggiorna con dati server
 }
 async function markConsegnata(id){
   const c=cars.find(x=>String(x.id)===String(id));
