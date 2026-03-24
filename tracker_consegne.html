@@ -165,7 +165,99 @@
   .toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:.82rem;display:flex;align-items:center;gap:10px;z-index:999;transform:translateY(100px);opacity:0;transition:all .3s;box-shadow:0 8px 32px rgba(0,0,0,.4)}
   .toast.show{transform:translateY(0);opacity:1}
   ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-  @media(max-width:600px){.form-row{grid-template-columns:1fr}.stats-bar{display:none}main{padding:12px}}
+
+  /* ── MOBILE OPTIMIZATION ─────────────────────────────────── */
+  @media(max-width:768px){
+
+    /* Header compatto */
+    header{height:52px;padding:0 14px}
+    .logo{font-size:1rem}
+    .sync-bar{display:none}
+    .stats-bar{display:none}
+    .view-toggle{display:none}
+
+    /* Padding ridotto */
+    main{padding:12px 10px 90px}
+
+    /* Setup banner */
+    .setup-banner{padding:14px}
+    .setup-banner h3{font-size:.85rem}
+    .setup-step{font-size:.78rem}
+    .setup-url-row{flex-direction:column}
+    .setup-url-input{width:100%;font-size:.85rem;padding:12px 14px}
+    .btn-connect{width:100%;padding:12px;font-size:.9rem}
+    .conn-status{justify-content:center}
+
+    /* Toolbar — solo bottone + ricerca */
+    .toolbar{gap:8px;margin-bottom:14px}
+    .btn-add{flex:1;justify-content:center;padding:12px;font-size:.9rem;border-radius:10px}
+    .filter-group{display:flex;overflow-x:auto;flex-wrap:nowrap;gap:6px;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .filter-group::-webkit-scrollbar{display:none}
+    .filter-btn{white-space:nowrap;padding:8px 14px;font-size:.75rem;flex-shrink:0}
+    .search-box{width:100%;font-size:.9rem;padding:10px 14px}
+
+    /* Alert */
+    .alert-item{flex-wrap:wrap;font-size:.75rem}
+
+    /* Note panel */
+    .notes-panel{padding:14px}
+    .notes-author-input{width:100%}
+    .notes-input-row{flex-direction:column}
+    .btn-note-send{width:100%;height:44px;font-size:.9rem}
+    .notes-list{max-height:200px}
+
+    /* Cards — una per riga, full width */
+    #cards-view{grid-template-columns:1fr;gap:10px}
+    .car-card{padding:14px;border-radius:10px}
+    .car-name{font-size:.95rem}
+    .phase-item{padding:10px}
+    .phase-label{font-size:.78rem}
+    .phase-check{width:20px;height:20px;font-size:.7rem}
+    .btn-sm{padding:7px 12px;font-size:.8rem}
+    .delivery-date{font-size:.72rem}
+
+    /* Modal full screen su mobile */
+    .modal-overlay{padding:0;align-items:flex-end}
+    .modal{border-radius:20px 20px 0 0;max-height:92vh;padding:20px 16px;width:100%}
+    .form-row{grid-template-columns:1fr}
+    .form-group input,.form-group textarea{font-size:16px;padding:12px 14px} /* 16px evita zoom iOS */
+    .modal-actions{flex-direction:column-reverse;gap:8px}
+    .btn-primary,.btn-secondary{width:100%;padding:14px;text-align:center;font-size:.9rem}
+
+    /* Toast in basso al centro */
+    .toast{bottom:80px;right:12px;left:12px;justify-content:center}
+
+    /* Tabella scroll orizzontale */
+    #table-view{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    #table-view table{min-width:600px}
+
+    /* Bottom nav bar */
+    .bottom-nav{display:flex}
+  }
+
+  /* Bottom navigation bar (solo mobile) */
+  .bottom-nav{
+    display:none;
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    height:64px;
+    z-index:150;
+    align-items:center;
+    justify-content:space-around;
+    padding:0 8px;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .bnav-btn{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;color:var(--muted);
+    font-size:.6rem;font-family:'DM Mono',monospace;
+    cursor:pointer;padding:8px 12px;border-radius:8px;
+    transition:all .15s;flex:1;
+  }
+  .bnav-btn .bnav-icon{font-size:1.3rem;line-height:1}
+  .bnav-btn.active{color:var(--accent)}
+  .bnav-btn:active{background:var(--surface2)}
 </style>
 </head>
 <body>
@@ -278,6 +370,22 @@
 </div>
 
 <div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<!-- BOTTOM NAV (mobile only) -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="bnav-btn active" id="bnav-auto" onclick="bnavGo('auto',this)">
+    <span class="bnav-icon">🚗</span>Auto
+  </button>
+  <button class="bnav-btn" id="bnav-add" onclick="openModal()">
+    <span class="bnav-icon">＋</span>Nuova
+  </button>
+  <button class="bnav-btn" id="bnav-note" onclick="bnavGo('note',this)">
+    <span class="bnav-icon">📋</span>Note
+  </button>
+  <button class="bnav-btn" id="bnav-sync" onclick="loadAll()">
+    <span class="bnav-icon">⟳</span>Sync
+  </button>
+</nav>
 
 <script>
 const GAS_URL_KEY = 'gas_url_v1';
@@ -565,6 +673,19 @@ function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.filter-btn
 function setView(v){currentView=v;document.getElementById('cards-view').style.display=v==='cards'?'grid':'none';document.getElementById('table-view').style.display=v==='table'?'block':'none';document.getElementById('btnCards').classList.toggle('active',v==='cards');document.getElementById('btnTable').classList.toggle('active',v==='table');}
 function toggleNotesPanel(){document.getElementById('notesBody').classList.toggle('collapsed');document.getElementById('notesToggleIcon').classList.toggle('open');}
 function showToast(icon,msg){const t=document.getElementById('toast');document.getElementById('toastIcon').textContent=icon;document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+function bnavGo(section, btn) {
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (section==='auto') {
+    document.getElementById('cards-view').scrollIntoView({behavior:'smooth'});
+  } else if (section==='note') {
+    const np = document.querySelector('.notes-panel');
+    np.scrollIntoView({behavior:'smooth'});
+    const body = document.getElementById('notesBody');
+    if (body.classList.contains('collapsed')) toggleNotesPanel();
+  }
+}
 
 document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
 document.getElementById('noteText').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)addNote();});
