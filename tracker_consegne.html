@@ -300,6 +300,7 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
       <label class="check-label"><input type="checkbox" id="f_lavint"> 🪣 Lavaggio interno</label>
       <label class="check-label"><input type="checkbox" id="f_lavext"> 💧 Lavaggio esterno</label>
       <label class="check-label"><input type="checkbox" id="f_kit"> 🦺 Kit emergenza</label>
+      <label class="check-label"><input type="checkbox" id="f_carb"> ⛽ Carburante</label>
       <label class="check-label"><input type="checkbox" id="f_pagata"> 💶 Pagata</label>
     </div>
     <div class="form-group"><label>Note</label><textarea id="f_note" placeholder="Accessori, particolari..."></textarea></div>
@@ -383,7 +384,7 @@ async function deleteNote(id){
 setInterval(()=>{if(GAS_URL)loadAll();},30000);
 
 // ── HELPERS ──
-function getProgress(c){return Math.round(([c.prep,c.rev,c.chiavi,c.doc,c.lavint,c.lavext,c.kit,c.pagata].filter(Boolean).length/8)*100);}
+function getProgress(c){return Math.round(([c.prep,c.rev,c.chiavi,c.doc,c.lavint,c.lavext,c.kit,c.carb,c.pagata].filter(Boolean).length/9)*100);}
 function getUrgency(c){
   if(c.consegnata||!c.data)return null;
   const diff=Math.ceil((new Date(c.data)-new Date(new Date().setHours(0,0,0,0)))/86400000);
@@ -453,6 +454,7 @@ function renderCards(){
       {key:'lavint',label:'Lav. interno',done:c.lavint},
       {key:'lavext',label:'Lav. esterno',done:c.lavext},
       {key:'kit',label:'Kit emerg.',done:c.kit},
+      {key:'carb',label:'Carburante',done:c.carb},
       {key:'pagata',label:'Pagata',done:c.pagata}
     ];
     return `<div class="car-card ${cardCls}">
@@ -527,7 +529,7 @@ async function togglePhase(id,key){
   if(!c||c.consegnata)return;
   c[key]=!c[key];
   renderAll(); // aggiorna subito UI
-  const l={prep:'Prep. estetica',rev:'Revisione',chiavi:'Chiavi',doc:'Documenti',lavint:'Lav. interno',lavext:'Lav. esterno',kit:'Kit emergenza',pagata:'Pagata'};
+  const l={prep:'Prep. estetica',rev:'Revisione',chiavi:'Chiavi',doc:'Documenti',lavint:'Lav. interno',lavext:'Lav. esterno',kit:'Kit emergenza',carb:'Carburante',pagata:'Pagata'};
   showToast(c[key]?'✅':'⭕',`${l[key]} ${c[key]?'completata':'deselezionata'}`);
   const res=await gasRequest({action:'saveCar',data:c});
   if(res?.ok){cars=res.cars;renderAll();} // aggiorna con dati server
@@ -551,7 +553,7 @@ async function addNote(){
 function openModal(car){
   document.getElementById('modalTitleText').textContent=car?'Modifica Auto':'Nuova Auto';
   ['modello','targa','cliente','telefono','data','ora','note'].forEach(k=>document.getElementById('f_'+k).value=car?.[k]||'');
-  ['prep','rev','chiavi','doc','lavint','lavext','kit','pagata'].forEach(k=>document.getElementById('f_'+k).checked=car?.[k]||false);
+  ['prep','rev','chiavi','doc','lavint','lavext','kit','carb','pagata'].forEach(k=>document.getElementById('f_'+k).checked=car?.[k]||false);
   editingId=car?.id||null;
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow='hidden';
@@ -579,6 +581,7 @@ async function saveAuto(){
     lavint:document.getElementById('f_lavint').checked,
     lavext:document.getElementById('f_lavext').checked,
     kit:document.getElementById('f_kit').checked,
+    carb:document.getElementById('f_carb').checked,
     pagata:document.getElementById('f_pagata').checked,
     note:document.getElementById('f_note').value.trim(),
   };
