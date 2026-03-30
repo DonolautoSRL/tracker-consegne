@@ -183,22 +183,53 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
 
 /* ── DESKTOP ── */
 @media(min-width:769px){
-  header{padding:0 24px;height:60px}
-  main{max-width:900px;margin:0 auto;padding-bottom:40px}
-  .setup-card,.stats-row,.search-wrap,.cards-wrap,.notes-panel{margin-left:0;margin-right:0}
-  .cards-wrap{padding-bottom:40px}
+  header{padding:0 32px;height:64px}
+  .logo{font-size:1.15rem}
+  .sync-pill{font-size:.75rem;padding:5px 14px}
+
+  main{max-width:1200px;margin:0 auto;padding:20px 32px 40px}
+  .setup-card{margin:0 0 20px;padding:22px}
+  .alert-banner{margin:0 0 16px}
+
+  /* Stats row orizzontale più grande */
+  .stats-row{padding:0 0 16px;gap:12px;flex-wrap:nowrap}
+  .stat-card{min-width:120px;padding:14px 20px;cursor:pointer;transition:all .15s}
+  .stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-1px)}
+  .stat-num{font-size:1.8rem}
+  .stat-label{font-size:.7rem}
+
+  /* Search + bottone sulla stessa riga */
+  .search-wrap{padding:0 0 16px;display:flex;gap:12px;align-items:center}
+  .search-box{flex:1;font-size:.9rem}
+  .btn-add-desktop{display:flex;align-items:center;gap:8px;background:var(--blue);color:var(--white);border:none;border-radius:var(--radius-sm);padding:11px 22px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:background .15s}
+  .btn-add-desktop:hover{background:var(--blue-dark)}
+
+  /* Cards griglia 3 colonne */
+  .cards-wrap{padding:0 0 40px;gap:0}
+  #cards-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+
+  /* Note panel */
+  .notes-panel{margin:0 0 16px}
+  .notes-list{max-height:180px}
+  .notes-form{flex-direction:row;align-items:flex-end;flex-wrap:wrap;gap:10px}
+  .note-author-input{width:180px;flex-shrink:0}
+  .note-textarea{flex:1;min-width:200px;min-height:44px}
+  .btn-send{width:auto;padding:11px 22px}
+
+  /* Nascondi bottom nav */
   .bottom-nav{display:none}
+
+  /* Modal centrato */
   .modal-overlay{align-items:center}
-  .modal{border-radius:var(--radius);max-width:480px;padding:28px}
+  .modal{border-radius:var(--radius);max-width:560px;padding:32px;max-height:85vh}
   .modal-handle{display:none}
-  .modal-actions{flex-direction:row-reverse}
+  .modal-actions{flex-direction:row-reverse;gap:10px}
   .btn-save{flex:1}
-  .btn-cancel{width:auto;padding:12px 20px}
+  .btn-cancel{width:auto;padding:12px 24px}
+
+  /* Toast in basso a destra */
   .toast{left:auto;right:24px;bottom:24px;max-width:320px}
-  .stats-row{padding:16px 0 0}
-  .search-wrap{padding:10px 0 0}
-  .cards-wrap{padding:10px 0 40px;gap:12px}
-  #cards-view-desktop{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+  .toast.show{transform:translateY(0);opacity:1}
 }
 </style>
 </head>
@@ -250,6 +281,7 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
   <!-- SEARCH -->
   <div class="search-wrap">
     <input class="search-box" type="text" id="searchBox" placeholder="Cerca cliente, targa, modello..." oninput="renderAll()">
+    <button class="btn-add-desktop" onclick="openModal()">＋ Nuova Auto</button>
   </div>
 
   <!-- NOTE PANEL -->
