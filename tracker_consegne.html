@@ -92,6 +92,8 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
 .badge-consegnata{background:var(--gray-light);color:var(--gray)}
 
 .card-date{padding:0 14px 8px;font-size:.78rem;color:var(--gray);display:flex;align-items:center;gap:5px}
+.card-meta{padding:0 14px 6px;display:flex;gap:12px;flex-wrap:wrap}
+.card-meta span{font-size:.72rem;color:var(--gray);display:flex;align-items:center;gap:3px}
 .card-date.urgent{color:var(--red);font-weight:600}
 .card-date.near{color:var(--yellow);font-weight:600}
 .card-date.ok{color:var(--green)}
@@ -382,18 +384,25 @@ async function gasRequest(params){
     return JSON.parse(await r.text());
   }catch(e){console.error(e);return null;}
 }
-async function loadAll(){
+let lastDataHash='';
+async function loadAll(silent){
   if(!GAS_URL)return;
-  setSyncMsg('sync...',true);
+  if(!silent)setSyncMsg('sync...',true);
   const res=await gasRequest({action:'getAll'});
   if(!res||res.error){
     setSyncMsg('errore'); setConnStatus('err','Errore connessione');
-    document.getElementById('setupBanner').style.display='block'; return;
+    if(!silent)document.getElementById('setupBanner').style.display='block'; return;
   }
-  cars=res.cars||[]; notes=res.notes||[];
+  // Aggiorna solo se i dati sono cambiati (evita flicker e perdita scroll)
+  const newHash=JSON.stringify(res.cars)+JSON.stringify(res.notes);
+  if(newHash!==lastDataHash){
+    cars=res.cars||[]; notes=res.notes||[];
+    lastDataHash=newHash;
+    renderAll();
+  }
   document.getElementById('setupBanner').style.display='none';
   setSyncMsg(new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}));
-  setConnStatus('ok','Connesso'); renderAll();
+  setConnStatus('ok','Connesso');
 }
 async function saveCar(car){
   setSyncMsg('salvo...',true);
@@ -413,7 +422,7 @@ async function deleteNote(id){
   const res=await gasRequest({action:'deleteNote',id:String(id)});
   if(res?.ok){notes=res.notes;renderNotes();}
 }
-setInterval(()=>{if(GAS_URL)loadAll();},30000);
+setInterval(()=>{if(GAS_URL)loadAll(true);},20000);
 
 // ── HELPERS ──
 function getProgress(c){return Math.round(([c.prep,c.rev,c.chiavi,c.doc,c.lavint,c.lavext,c.kit,c.carb,c.pagata].filter(Boolean).length/9)*100);}
@@ -434,6 +443,12 @@ function formatDate(d,t){
   if(!d)return null;
   const s=new Date(d).toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
   return t?`${s} ${t}`:s;
+}
+function formatShort(d){
+  if(!d)return '';
+  const dt=new Date(d);
+  if(isNaN(dt))return esc(d);
+  return dt.toLocaleDateString('it-IT',{day:'numeric',month:'short',year:'2-digit'});
 }
 function getDateClass(c){
   if(c.consegnata)return'';
@@ -493,11 +508,12 @@ function renderCards(){
       <div class="card-top">
         <div class="card-top-left">
           <div class="car-name">${esc(c.modello)}</div>
-          <div class="car-sub">${esc(c.targa||'—')} · ${esc(c.cliente)}</div>
+          <div class="car-sub">${esc(c.targa||'—')}${c.colore?' · '+esc(c.colore):''} · ${esc(c.cliente)}</div>
         </div>
         <span class="status-badge ${st.cls}">${st.label}</span>
       </div>
-      ${ds?`<div class="card-date ${dc}">📅 ${ds}</div>`:''}
+      ${(c.scadrev||c.datavendita)?`<div class="card-meta">${c.datavendita?`<span>🛒 Venduta: ${formatShort(c.datavendita)}</span>`:''}${c.scadrev?`<span>🔧 Rev: ${formatShort(c.scadrev)}</span>`:''}</div>`:''}
+      ${ds?`<div class="card-date ${dc}">📅 Consegna: ${ds}</div>`:'<div class="card-date no-date" onclick="editAuto(\''+c.id+'\')" style="cursor:pointer;color:var(--orange)">📅 Imposta data consegna →</div>'}
       <div class="phases-row">${phases.map(ph=>`
         <div class="phase-chip ${ph.done?'done':''}" onclick="togglePhase('${c.id}','${ph.key}')">
           <div class="chip-dot"></div>${ph.label}
