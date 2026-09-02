@@ -250,7 +250,6 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
   <div class="setup-card" id="setupBanner" style="display:none">
     <h3>⚙️ Connetti a Google Sheets</h3>
     <input class="setup-url-input" type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
-    <input class="setup-url-input" type="password" id="gasKeyInput" placeholder="Chiave di accesso" autocomplete="off">
     <button class="btn-connect" onclick="connectGAS()">Connetti</button>
     <div class="conn-status" id="connStatus"></div>
   </div>
@@ -359,21 +358,16 @@ header{background:var(--blue);padding:0 16px;display:flex;align-items:center;jus
 
 <script>
 const GAS_URL_KEY='gas_url_v1';
-const GAS_CHIAVE_KEY='gas_chiave_v1';
 let GAS_URL=localStorage.getItem(GAS_URL_KEY)||'';
-// La chiave viaggia con ogni richiesta: senza, il backend rifiuta.
-// Si inserisce una volta sola per dispositivo e resta in questo browser.
-let GAS_CHIAVE=localStorage.getItem(GAS_CHIAVE_KEY)||'';
+// La chiave di accesso non si usa piu': la togliamo dai browser che l'avevano salvata.
+localStorage.removeItem('gas_chiave_v1');
 let cars=[],notes=[],editingId=null,currentFilter='tutti';
 
 // ── GAS ──
 function connectGAS(){
   const url=document.getElementById('gasUrlInput').value.trim();
-  const chiave=document.getElementById('gasKeyInput').value.trim();
   if(!url.startsWith('https://script.google.com')){setConnStatus('err','URL non valido');return;}
-  if(!chiave){setConnStatus('err','Manca la chiave di accesso');return;}
   GAS_URL=url; localStorage.setItem(GAS_URL_KEY,GAS_URL);
-  GAS_CHIAVE=chiave; localStorage.setItem(GAS_CHIAVE_KEY,GAS_CHIAVE);
   setConnStatus('loading','Connessione...'); loadAll();
 }
 function setConnStatus(t,m){document.getElementById('connStatus').innerHTML=`<div class="conn-dot ${t}"></div>${m}`;}
@@ -384,8 +378,7 @@ function setSyncMsg(m,s=false){
 async function gasRequest(params){
   if(!GAS_URL)return null;
   try{
-    const conChiave=Object.assign({},params,{chiave:GAS_CHIAVE});
-    const qs=Object.entries(conChiave).map(([k,v])=>{
+    const qs=Object.entries(params).map(([k,v])=>{
       const val=(typeof v==='object')?encodeURIComponent(JSON.stringify(v)):encodeURIComponent(String(v));
       return `${k}=${val}`;
     }).join('&');
@@ -399,10 +392,6 @@ async function loadAll(silent){
   if(!silent)setSyncMsg('sync...',true);
   const res=await gasRequest({action:'getAll'});
   if(!res||res.error){
-    if(res&&res.nonAutorizzato){
-      setSyncMsg('non autorizzato'); setConnStatus('err','Chiave di accesso errata');
-      document.getElementById('setupBanner').style.display='block'; return;
-    }
     setSyncMsg('errore'); setConnStatus('err','Errore connessione');
     if(!silent)document.getElementById('setupBanner').style.display='block'; return;
   }
@@ -687,11 +676,10 @@ document.getElementById('noteText').addEventListener('keydown',e=>{if(e.key==='E
 setInterval(renderAlerts,60000);
 
 // ── INIT ──
-if(GAS_URL&&GAS_CHIAVE){
+if(GAS_URL){
   document.getElementById('gasUrlInput').value=GAS_URL;
   loadAll();
 }else{
-  if(GAS_URL)document.getElementById('gasUrlInput').value=GAS_URL;
   document.getElementById('setupBanner').style.display='block';
   setSyncMsg('non connesso');
   renderAll();
