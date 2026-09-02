@@ -370,21 +370,28 @@ function connectGAS(){
   GAS_URL=url; localStorage.setItem(GAS_URL_KEY,GAS_URL);
   setConnStatus('loading','Connessione...'); loadAll();
 }
-function setConnStatus(t,m){document.getElementById('connStatus').innerHTML=`<div class="conn-dot ${t}"></div>${m}`;}
+function setConnStatus(t,m){document.getElementById('connStatus').innerHTML=`<div class="conn-dot ${t}"></div>${esc(m)}`;}
 function setSyncMsg(m,s=false){
   document.getElementById('syncMsg').textContent=m;
   document.getElementById('syncSpin').classList.toggle('spinning',s);
 }
+// Motivo dell'ultima richiesta fallita: "errore connessione" da solo non
+// distingue un URL sbagliato da un backend che risponde ma si lamenta.
+let ultimoErrore='';
 async function gasRequest(params){
   if(!GAS_URL)return null;
+  ultimoErrore='';
   try{
     const qs=Object.entries(params).map(([k,v])=>{
       const val=(typeof v==='object')?encodeURIComponent(JSON.stringify(v)):encodeURIComponent(String(v));
       return `${k}=${val}`;
     }).join('&');
     const r=await fetch(GAS_URL+'?'+qs,{redirect:'follow'});
-    return JSON.parse(await r.text());
-  }catch(e){console.error(e);return null;}
+    const testo=await r.text();
+    if(!r.ok){ultimoErrore=`il backend risponde ${r.status}`;console.error(r.status,testo);return null;}
+    try{return JSON.parse(testo);}
+    catch(e){console.error(testo);ultimoErrore='risposta non in JSON: '+testo.trim().slice(0,80);return null;}
+  }catch(e){console.error(e);ultimoErrore='backend non raggiungibile ('+e.message+')';return null;}
 }
 let lastDataHash='';
 async function loadAll(silent){
@@ -392,7 +399,8 @@ async function loadAll(silent){
   if(!silent)setSyncMsg('sync...',true);
   const res=await gasRequest({action:'getAll'});
   if(!res||res.error){
-    setSyncMsg('errore'); setConnStatus('err','Errore connessione');
+    const motivo=(res&&res.error)?String(res.error):ultimoErrore;
+    setSyncMsg('errore'); setConnStatus('err','Errore connessione'+(motivo?': '+motivo:''));
     if(!silent)document.getElementById('setupBanner').style.display='block'; return;
   }
   // Aggiorna solo se i dati sono cambiati (evita flicker e perdita scroll)
